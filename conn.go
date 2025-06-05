@@ -1,7 +1,7 @@
 /*
  * @Author: yeying
  * @Date: 2025-06-01 18:05:29
- * @LastEditTime: 2025-06-01 18:08:47
+ * @LastEditTime: 2025-06-05 22:44:30
  * @FilePath: \dark\conn.go
  * @Description:
  */
@@ -10,15 +10,19 @@ package dark
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/gorilla/websocket"
 	"github.com/panjf2000/gnet/v2"
 )
 
 type Conn struct {
-	ctx    context.Context
-	wsConn *websocket.Conn //websocket链接
-	c      gnet.Conn
+	ctx        context.Context
+	wsConn     *websocket.Conn //websocket链接
+	c          gnet.Conn
+	activeTime int64 //最近活跃时间
+	service    *Service
+	connTime   int64 //连接时间
 }
 
 /**
@@ -27,7 +31,40 @@ type Conn struct {
  * @return {*}
  */
 func NewConn(c gnet.Conn) *Conn {
-	return &Conn{ctx: context.Background(), wsConn: nil, c: c}
+	return &Conn{ctx: context.Background(), wsConn: nil, c: c, activeTime: time.Now().UnixMicro()}
+}
+
+/**
+ * @description: 设置服务列表
+ * @param {*Service} service
+ * @return {*}
+ */
+/*func (m *Conn) SetService(service *Service) {
+	m.service = service
+}*/
+
+/**
+ * @description: 获取服务信息
+ * @return {*}
+ */
+func (m *Conn) GetService() *Service {
+	return m.service
+}
+
+/**
+ * @description: 刷新活跃时间
+ * @return {*}
+ */
+func (m *Conn) RefreshActive() {
+	m.activeTime = time.Now().UnixMicro()
+}
+
+/**
+ * @description: 获取活跃时间
+ * @return {*}
+ */
+func (m *Conn) GetActiveTime() int64 {
+	return m.activeTime
 }
 
 /**
@@ -43,17 +80,8 @@ func (m *Conn) GetContext() context.Context {
  * @param {*websocket.Conn} wsConn
  * @return {*}
  */
-func (m *Conn) SetWSConn(wsConn *websocket.Conn) {
+func (m *Conn) setWSConn(wsConn *websocket.Conn) {
 	m.wsConn = wsConn
-}
-
-/**
- * @description: 设置GNET链接
- * @param {gnet.Conn} c
- * @return {*}
- */
-func (m *Conn) SetConn(c gnet.Conn) {
-	m.c = c
 }
 
 /**
@@ -63,6 +91,23 @@ func (m *Conn) SetConn(c gnet.Conn) {
  */
 func (m *Conn) GetWSConn() *websocket.Conn {
 	return m.wsConn
+}
+
+/**
+ * @description: 设置GNET链接
+ * @param {gnet.Conn} c
+ * @return {*}
+ */
+func (m *Conn) setConn(c gnet.Conn) {
+	m.c = c
+}
+
+/**
+ * @description: 获取GNET链接
+ * @return {*}
+ */
+func (m *Conn) GetConn() gnet.Conn {
+	return m.c
 }
 
 /**
