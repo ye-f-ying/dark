@@ -60,7 +60,7 @@ func (m *Service) DeleteConn(key gnet.Conn) {
 	m.conns.Delete(key)
 }
 
-func (m *Service) SetEngine(eng gnet.Engine) {
+func (m *Service) setEngine(eng gnet.Engine) {
 	m.eng = eng
 }
 
@@ -73,6 +73,6 @@ func (m *Service) GetEngine(eng gnet.Engine) gnet.Engine {
  * @param {...Option} options
  * @return {*}
  */
-func (m *Service) SetOptions(options ...Option) {
+func (m *Service) setOptions(options ...Option) {
 	m.opt = loadOptions(options...)
 }

@@ -26,7 +26,7 @@ func NewEventEngine() *EventEngine {
 		}}
 }
 
-func (m *EventEngine) SetHandle(handle HandleInterface) {
+func (m *EventEngine) setHandle(handle HandleInterface) {
 	m.handle = handle
 }
 
@@ -35,7 +35,7 @@ func (m *EventEngine) SetHandle(handle HandleInterface) {
  * @param {websocket.Upgrader} upgrader
  * @return {*}
  */
-func (m *EventEngine) SetUpgrader(upgrader websocket.Upgrader) {
+func (m *EventEngine) setUpgrader(upgrader websocket.Upgrader) {
 	m.upgrader = upgrader
 }
 
@@ -56,7 +56,7 @@ func (m *EventEngine) GetService() *Service {
  * @return {*}
  */
 func (m *EventEngine) OnBoot(eng gnet.Engine) gnet.Action {
-	m.GetService().SetEngine(eng)
+	m.GetService().setEngine(eng)
 	return gnet.None
 }
 
