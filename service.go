@@ -1,3 +1,10 @@
+/*
+ * @Author: yeying
+ * @Date: 2025-06-03 22:44:01
+ * @LastEditTime: 2025-06-10 21:49:13
+ * @FilePath: \dark\service.go
+ * @Description:
+ */
 package dark
 
 import (
@@ -18,10 +25,6 @@ func newService() *Service {
 	return &Service{}
 }
 
-/**
- * @description: 获取Options
- * @return {*}
- */
 func (m *Service) GetOptions() *Options {
 	return m.opt
 }

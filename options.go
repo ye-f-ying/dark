@@ -1,7 +1,7 @@
 /*
  * @Author: yeying
  * @Date: 2025-06-03 21:53:59
- * @LastEditTime: 2025-06-08 18:26:29
+ * @LastEditTime: 2025-06-10 21:58:59
  * @FilePath: \dark\options.go
  * @Description:
  */
@@ -11,6 +11,7 @@ import (
 	"dark/logger"
 
 	"github.com/gorilla/websocket"
+	"github.com/panjf2000/ants/v2"
 )
 
 type Option func(opts *Options)
@@ -28,11 +29,15 @@ type Options struct {
 	IsWebsocket     bool
 	Upgrader        websocket.Upgrader
 	isUpgrader      bool
-	LogConsole      *bool  // 是否输出到控制台
-	LogConsoleHuman *bool  // 控制台是否为人类可读格式
-	LogDir          string // 日志文件目录，默认 "" 表示不写入文件
-	LogSplitByLevel *bool  // 是否按级别分割日志
-	LogLevel        string // 日志级别
+	LogConsole      *bool         // 是否输出到控制台
+	LogConsoleHuman *bool         // 控制台是否为人类可读格式
+	LogDir          string        // 日志文件目录，默认 "" 表示不写入文件
+	LogSplitByLevel *bool         // 是否按级别分割日志
+	LogLevel        string        // 日志级别
+	GoPool          IGoPool       //协程池
+	isAnts          *bool         //是否使用ants协程池
+	antsOpt         []ants.Option //
+	antsSize        int
 }
 
 /**
@@ -121,5 +126,30 @@ func WithLogSplitByLevel(spl bool) Option {
 func WithLogLevel(level logger.Level) Option {
 	return func(opts *Options) {
 		opts.LogLevel = string(level)
+	}
+}
+
+/**
+ * @description: 自定义使用协程池对象
+ * @param {IGoPool} p
+ * @return {*}
+ */
+func WithGoPool(p IGoPool) Option {
+	return func(opts *Options) {
+		opts.GoPool = p
+	}
+}
+
+/**
+ * @description: 是否使用ant协程池
+ * @param {bool} p
+ * @return {*}
+ */
+func WithAnts(size int, antOpts ...ants.Option) Option {
+	return func(opts *Options) {
+		isAnts := true
+		opts.isAnts = &isAnts
+		opts.antsOpt = antOpts
+		opts.antsSize = size
 	}
 }

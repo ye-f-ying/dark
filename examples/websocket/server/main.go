@@ -1,7 +1,7 @@
 /*
  * @Author: yeying
  * @Date: 2025-05-28 21:49:21
- * @LastEditTime: 2025-06-08 18:33:59
+ * @LastEditTime: 2025-06-10 22:02:25
  * @FilePath: \dark\examples\websocket\server\main.go
  * @Description:
  */
@@ -11,6 +11,8 @@ import (
 	"dark"
 	"dark/logger/dlog"
 	"fmt"
+
+	"github.com/panjf2000/ants/v2"
 )
 
 type Test struct {
@@ -23,5 +25,5 @@ func (m *Test) OnMessage(c *dark.Session) {
 }
 
 func main() {
-	dark.Run(&Test{}, dark.WithAddr(":12000"), dark.WithIsWebsocket(true))
+	dark.Run(&Test{}, dark.WithAddr(":12000"), dark.WithIsWebsocket(true), dark.WithAnts(100, ants.WithPreAlloc(true)))
 }

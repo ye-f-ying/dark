@@ -1,7 +1,7 @@
 /*
  * @Author: yeying
  * @Date: 2025-06-05 21:40:00
- * @LastEditTime: 2025-06-08 18:31:36
+ * @LastEditTime: 2025-06-10 21:56:33
  * @FilePath: \dark\server.go
  * @Description:
  */
@@ -80,6 +80,17 @@ func (m *Server) Start(os ...interface{}) error {
 		return err
 	}
 	dlog.SetLogger(log)
+
+	//协程池设置
+	if opt.isAnts != nil && *opt.isAnts {
+		aPool := newAPool(opt.antsSize, opt.antsOpt...)
+		err := aPool.Init()
+		if err != nil {
+			return err
+		}
+		setGoPool(aPool)
+	}
+
 	return gnet.Run(eng, fmt.Sprintf("tcp://%s", addr), g_opts...)
 }
 

@@ -71,7 +71,9 @@ func (m *EventEngine) OnOpen(c gnet.Conn) ([]byte, gnet.Action) {
 	c.SetContext(conn)
 	m.GetService().AddConn(c, conn)
 	if !m.GetService().GetOptions().IsWebsocket && m.handle != nil {
-		m.handle.OnConnect(NewSession(conn, nil, 0))
+		Go(func() {
+			m.handle.OnConnect(NewSession(conn, nil, 0))
+		})
 	}
 	return nil, gnet.None
 }
@@ -85,11 +87,14 @@ func (m *EventEngine) OnOpen(c gnet.Conn) ([]byte, gnet.Action) {
 func (m *EventEngine) OnClose(c gnet.Conn, err error) (action gnet.Action) {
 	if m.handle != nil {
 		conn, ok := c.Context().(*Conn)
-		if ok {
-			m.handle.OnClose(NewSession(conn, nil, 0))
-		} else {
-			m.handle.OnClose(NewSession(m.GetService().GetConn(c), nil, 0))
-		}
+		Go(func() {
+			if ok {
+				m.handle.OnClose(NewSession(conn, nil, 0))
+			} else {
+				m.handle.OnClose(NewSession(m.GetService().GetConn(c), nil, 0))
+			}
+		})
+
 	}
 	m.GetService().DeleteConn(c)
 	return gnet.None
@@ -126,9 +131,11 @@ func (m *EventEngine) OnTraffic(c gnet.Conn) (action gnet.Action) {
 				return gnet.Close
 			}
 			conn.setWSConn(wsConn)
-			if m.handle != nil {
-				m.handle.OnConnect(session)
-			}
+			Go(func() {
+				if m.handle != nil {
+					m.handle.OnConnect(session)
+				}
+			})
 			return gnet.None
 		}
 		msgType, msg, err := conn.GetWSConn().ReadMessage()
@@ -145,8 +152,11 @@ func (m *EventEngine) OnTraffic(c gnet.Conn) (action gnet.Action) {
 		session.msg = buf
 	}
 
-	if m.handle != nil {
-		m.handle.OnMessage(session)
-	}
+	Go(func() {
+		if m.handle != nil {
+			m.handle.OnMessage(session)
+		}
+	})
+
 	return gnet.None
 }
