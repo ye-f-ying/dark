@@ -1,24 +1,19 @@
 /*
  * @Author: yeying
  * @Date: 2025-06-03 22:44:01
- * @LastEditTime: 2025-06-10 21:49:13
+ * @LastEditTime: 2025-06-15 15:17:22
  * @FilePath: \dark\service.go
  * @Description:
  */
 package dark
 
 import (
-	"sync"
-
 	"github.com/panjf2000/gnet/v2"
 )
 
 type Service struct {
-	opt *Options
-
+	opt *Options //配置信息
 	eng gnet.Engine
-
-	conns sync.Map
 }
 
 func newService() *Service {
@@ -27,40 +22,6 @@ func newService() *Service {
 
 func (m *Service) GetOptions() *Options {
 	return m.opt
-}
-
-/**
- * @description: 添加链接
- * @param {gnet.Conn} key
- * @param {*Conn} val
- * @return {*}
- */
-func (m *Service) AddConn(key gnet.Conn, val *Conn) {
-	m.conns.Store(key, val)
-}
-
-/**
- * @description: 获取链接
- * @param {gnet.Conn} key
- * @return {*}
- */
-func (m *Service) GetConn(key gnet.Conn) *Conn {
-	value, ok := m.conns.Load(key)
-	if ok {
-		if v, ok := value.(*Conn); ok {
-			return v
-		}
-	}
-	return nil
-}
-
-/**
- * @description: 删除链接
- * @param {gnet.Conn} key
- * @return {*}
- */
-func (m *Service) DeleteConn(key gnet.Conn) {
-	m.conns.Delete(key)
 }
 
 func (m *Service) setEngine(eng gnet.Engine) {

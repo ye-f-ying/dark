@@ -1,7 +1,7 @@
 /*
  * @Author: yeying
  * @Date: 2025-06-01 18:05:29
- * @LastEditTime: 2025-06-05 22:44:30
+ * @LastEditTime: 2025-06-15 17:11:34
  * @FilePath: \dark\conn.go
  * @Description:
  */
@@ -22,7 +22,8 @@ type Conn struct {
 	c          gnet.Conn
 	activeTime int64 //最近活跃时间
 	service    *Service
-	connTime   int64 //连接时间
+	connTime   int64       //连接时间
+	mark       interface{} //链接标识
 }
 
 /**
@@ -30,18 +31,9 @@ type Conn struct {
  * @param {gnet.Conn} c
  * @return {*}
  */
-func NewConn(c gnet.Conn) *Conn {
-	return &Conn{ctx: context.Background(), wsConn: nil, c: c, activeTime: time.Now().UnixMicro()}
+func NewConn(c gnet.Conn, service *Service) *Conn {
+	return &Conn{ctx: context.Background(), wsConn: nil, c: c, activeTime: time.Now().UnixMicro(), service: service}
 }
-
-/**
- * @description: 设置服务列表
- * @param {*Service} service
- * @return {*}
- */
-/*func (m *Conn) SetService(service *Service) {
-	m.service = service
-}*/
 
 /**
  * @description: 获取服务信息
@@ -91,15 +83,6 @@ func (m *Conn) setWSConn(wsConn *websocket.Conn) {
  */
 func (m *Conn) GetWSConn() *websocket.Conn {
 	return m.wsConn
-}
-
-/**
- * @description: 设置GNET链接
- * @param {gnet.Conn} c
- * @return {*}
- */
-func (m *Conn) setConn(c gnet.Conn) {
-	m.c = c
 }
 
 /**
@@ -155,4 +138,11 @@ func (m *Conn) Send(buf []byte, msgTypes ...int) (int, error) {
 	}
 
 	return m.c.Write(buf)
+}
+
+func (m *Conn) Close() error {
+	if m.c == nil {
+		return nil
+	}
+	return m.c.Close()
 }
