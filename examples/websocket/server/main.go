@@ -1,7 +1,7 @@
 /*
  * @Author: yeying
  * @Date: 2025-05-28 21:49:21
- * @LastEditTime: 2025-06-10 22:02:25
+ * @LastEditTime: 2025-06-24 22:55:09
  * @FilePath: \dark\examples\websocket\server\main.go
  * @Description:
  */
@@ -22,6 +22,7 @@ type Test struct {
 func (m *Test) OnMessage(c *dark.Session) {
 	fmt.Println(c.GetMsg())
 	dlog.Info(string(c.GetMsg()))
+	c.GetConn().Send(c.GetMsg(), c.GetMsgType())
 }
 
 func main() {

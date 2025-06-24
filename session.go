@@ -1,13 +1,22 @@
+/*
+ * @Author: yeying
+ * @Date: 2025-06-05 22:27:56
+ * @LastEditTime: 2025-06-23 22:18:03
+ * @FilePath: \dark\session.go
+ * @Description:
+ */
 package dark
 
+import "context"
+
 type Session struct {
-	c       *Conn
-	msg     []byte
-	msgType int
+	c    *Conn
+	pack IPack
+	ctx  context.Context
 }
 
-func NewSession(c *Conn, msg []byte, msgType int) *Session {
-	return &Session{c: c, msg: msg, msgType: msgType}
+func NewSession(c *Conn, p IPack, ctx context.Context) *Session {
+	return &Session{c: c, pack: p, ctx: ctx}
 }
 
 /**
@@ -23,7 +32,10 @@ func (m *Session) GetConn() *Conn {
  * @return {*}
  */
 func (m *Session) GetMsg() []byte {
-	return m.msg
+	if m.pack == nil {
+		return nil
+	}
+	return m.pack.GetData()
 }
 
 /**
@@ -31,7 +43,10 @@ func (m *Session) GetMsg() []byte {
  * @return {*}
  */
 func (m *Session) GetMsgType() int {
-	return m.msgType
+	if m.pack == nil {
+		return 0
+	}
+	return m.pack.GetType()
 }
 
 /**
@@ -44,7 +59,7 @@ func (m *Session) Send(data []byte) error {
 		return nil
 	}
 	if m.c.GetService().GetOptions().IsWebsocket {
-		return m.c.GetWSConn().WriteMessage(m.msgType, data)
+		return m.c.GetWSConn().WriteMessage(m.pack.GetType(), data)
 	}
 	_, err := m.c.GetConn().Write(data)
 	return err

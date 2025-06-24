@@ -1,7 +1,7 @@
 /*
  * @Author: yeying
  * @Date: 2025-06-03 22:44:01
- * @LastEditTime: 2025-06-15 15:17:22
+ * @LastEditTime: 2025-06-23 22:21:28
  * @FilePath: \dark\service.go
  * @Description:
  */
@@ -14,6 +14,7 @@ import (
 type Service struct {
 	opt *Options //配置信息
 	eng gnet.Engine
+	dh  IDataHandle
 }
 
 func newService() *Service {
@@ -30,6 +31,17 @@ func (m *Service) setEngine(eng gnet.Engine) {
 
 func (m *Service) GetEngine(eng gnet.Engine) gnet.Engine {
 	return m.eng
+}
+
+func (m *Service) getDataHandle() IDataHandle {
+	if m.dh == nil {
+		if m.GetOptions().IsWebsocket {
+			m.dh = &WSDataHandle{}
+		} else {
+			m.dh = &DefaultDataHandle{}
+		}
+	}
+	return m.dh
 }
 
 /**

@@ -1,7 +1,7 @@
 /*
  * @Author: yeying
  * @Date: 2025-06-01 18:05:29
- * @LastEditTime: 2025-06-15 17:11:34
+ * @LastEditTime: 2025-06-24 22:38:15
  * @FilePath: \dark\conn.go
  * @Description:
  */
@@ -24,6 +24,7 @@ type Conn struct {
 	service    *Service
 	connTime   int64       //连接时间
 	mark       interface{} //链接标识
+	data       *buffer
 }
 
 /**
@@ -32,7 +33,7 @@ type Conn struct {
  * @return {*}
  */
 func NewConn(c gnet.Conn, service *Service) *Conn {
-	return &Conn{ctx: context.Background(), wsConn: nil, c: c, activeTime: time.Now().UnixMicro(), service: service}
+	return &Conn{ctx: context.Background(), wsConn: nil, c: c, activeTime: time.Now().UnixMicro(), service: service, data: &buffer{}}
 }
 
 /**
@@ -94,24 +95,15 @@ func (m *Conn) GetConn() gnet.Conn {
 }
 
 /**
- * @description:读取数据
+ * @description: 将数据写入缓存
+ * @param {[]byte} buf
  * @return {*}
  */
-func (m *Conn) Read() (int, []byte, error) {
-	if m.c == nil {
-		return 0, nil, fmt.Errorf("error conn")
+func (m *Conn) write(buf []byte) {
+	if m.data == nil {
+		return
 	}
-	if m.wsConn != nil {
-		return m.wsConn.ReadMessage()
-	}
-
-	size := m.c.InboundBuffered()
-	buf := make([]byte, size)
-	read, err := m.c.Read(buf)
-	if err != nil || read < size {
-		return read, nil, err
-	}
-	return read, buf, nil
+	m.data.Writes(buf)
 }
 
 /**
@@ -129,12 +121,17 @@ func (m *Conn) Send(buf []byte, msgTypes ...int) (int, error) {
 		return -1, fmt.Errorf("data is null")
 	}
 
-	if m.wsConn != nil {
-		messageType := websocket.BinaryMessage
+	ctx := context.Background()
+	if m.GetService().GetOptions().IsWebsocket {
+		messageType := FrameBinary
 		if len(msgTypes) > 0 {
 			messageType = msgTypes[0]
 		}
-		return bufLen, m.wsConn.WriteMessage(messageType, buf)
+		ctx = context.WithValue(ctx, WEBSOCKET_CONTEXT_TYPE_KEY, messageType)
+	}
+	_, buf, err := m.GetService().getDataHandle().Packet(ctx, buf)
+	if err != nil {
+		return -1, err
 	}
 
 	return m.c.Write(buf)

@@ -2,6 +2,7 @@ package dark
 
 import (
 	"bufio"
+	"context"
 	"net/http"
 	"strings"
 	"time"
@@ -71,7 +72,7 @@ func (m *EventEngine) OnOpen(c gnet.Conn) ([]byte, gnet.Action) {
 	c.SetContext(conn)
 	if !m.GetService().GetOptions().IsWebsocket && m.handle != nil {
 		Go(func() {
-			m.handle.OnConnect(NewSession(conn, nil, 0))
+			m.handle.OnConnect(NewSession(conn, nil, context.Background()))
 		})
 	}
 	return nil, gnet.None
@@ -88,7 +89,7 @@ func (m *EventEngine) OnClose(c gnet.Conn, err error) (action gnet.Action) {
 		conn, ok := c.Context().(*Conn)
 		if ok {
 			Go(func() {
-				m.handle.OnClose(NewSession(conn, nil, 0))
+				m.handle.OnClose(NewSession(conn, nil, context.Background()))
 			})
 		}
 	}
@@ -106,10 +107,9 @@ func (m *EventEngine) OnTraffic(c gnet.Conn) (action gnet.Action) {
 		return gnet.Close
 	}
 	conn.RefreshActive()
-	session := NewSession(conn, nil, 0)
 	if m.GetService().GetOptions().IsWebsocket { //判断是否是wensocket服务
 		if conn.wsConn == nil { //是否已经升级为WEBSOCKET服务了
-			_, buf, err := conn.Read()
+			_, buf, err := m.read(c)
 			if err != nil {
 				return gnet.Close
 			}
@@ -126,6 +126,7 @@ func (m *EventEngine) OnTraffic(c gnet.Conn) (action gnet.Action) {
 				return gnet.Close
 			}
 			conn.setWSConn(wsConn)
+			session := NewSession(conn, nil, context.Background())
 			Go(func() {
 				if m.handle != nil {
 					m.handle.OnConnect(session)
@@ -133,25 +134,42 @@ func (m *EventEngine) OnTraffic(c gnet.Conn) (action gnet.Action) {
 			})
 			return gnet.None
 		}
-		msgType, msg, err := conn.GetWSConn().ReadMessage()
-		if err != nil {
-			return gnet.Close
-		}
-		session.msg = msg
-		session.msgType = msgType
-	} else {
-		_, buf, err := conn.Read()
-		if err != nil {
-			return gnet.Close
-		}
-		session.msg = buf
 	}
 
-	Go(func() {
-		if m.handle != nil {
-			m.handle.OnMessage(session)
-		}
-	})
-
+	_, buf, err := m.read(c)
+	if err != nil {
+		return gnet.Close
+	}
+	conn.write(buf)
+	Go(asynHandle(m.handle, conn, conn.service.getDataHandle()))
 	return gnet.None
+}
+
+/**
+ * @description:读取数据
+ * @return {*}
+ */
+func (m *EventEngine) read(c gnet.Conn) (int, []byte, error) {
+	size := c.InboundBuffered()
+	buf := make([]byte, size)
+	read, err := c.Read(buf)
+	if err != nil || read < size {
+		return read, nil, err
+	}
+	return read, buf, nil
+}
+
+func asynHandle(handle HandleInterface, c *Conn, dh IDataHandle) func() {
+	return func() {
+		if handle == nil || c == nil {
+			return
+		}
+		packs, _ := c.data.Reads(context.Background(), dh)
+		for _, msg := range packs {
+			if msg == nil {
+				continue
+			}
+			handle.OnMessage(NewSession(c, msg, context.Background()))
+		}
+	}
 }
